@@ -3,21 +3,43 @@ import type { User } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-
+import * as bcrypt from 'bcrypt';
+import { NotFoundException } from '@nestjs/common';
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
-  create(data: CreateUserDto): Promise<User> {
-    return this.prisma.user.create({ data });
+  async create(data: CreateUserDto) {
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+
+    return this.prisma.user.create({
+      data: {
+        ...data,
+        password: hashedPassword,
+      },
+      select: {
+        id: true,
+        email: true,
+        nom: true,
+        prenom: true,
+      },
+    });
   }
 
   findAll(): Promise<User[]> {
     return this.prisma.user.findMany();
   }
 
-  findOne(id: number): Promise<User | null> {
-    return this.prisma.user.findUnique({ where: { id } });
+  async findOne(id: number): Promise<User> {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`Utilisateur avec l'id ${id} introuvable`);
+    }
+
+    return user;
   }
 
   update(id: number, data: UpdateUserDto): Promise<User> {

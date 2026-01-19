@@ -7,7 +7,7 @@ import * as bcrypt from 'bcrypt';
 import { NotFoundException } from '@nestjs/common';
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(data: CreateUserDto) {
     const hashedPassword = await bcrypt.hash(data.password, 10);
